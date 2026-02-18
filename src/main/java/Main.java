@@ -51,5 +51,29 @@ public class Main {
 
         Double weightedTurnover = dataRetriever.computeWeightedTurnover();
         System.out.println(weightedTurnover);
+
+
+        // =========================
+        // Q5-A - Totaux HT / TVA / TTC
+        // =========================
+        System.out.println("\n=== Q5-A - TOTAUX HT / TVA / TTC PAR FACTURE ===");
+
+        dataRetriever.findInvoiceTaxSummaries()
+                .forEach(s ->
+                        System.out.println(
+                                s.getInvoiceId() +
+                                        " | HT " + s.getTotalHt() +
+                                        " | TVA " + s.getTotalTva() +
+                                        " | TTC " + s.getTotalTtc()
+                        )
+                );
+
+        // =========================
+        // Q5-B - CA TTC pondéré
+        // =========================
+        System.out.println("\n=== Q5-B - CHIFFRE D’AFFAIRES TTC PONDÉRÉ ===");
+
+        System.out.println(dataRetriever.computeWeightedTurnoverTtc());
+
     }
 }

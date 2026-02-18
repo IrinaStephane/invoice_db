@@ -160,4 +160,82 @@ public class DataRetriever {
             throw new RuntimeException(e);
         }
     }
+    public List<InvoiceTaxSummary> findInvoiceTaxSummaries() {
+
+        String sql = """
+        SELECT i.id AS invoice_id,
+               ht.total_ht,
+               ht.total_ht * t.rate / 100 AS total_tva,
+               ht.total_ht * (1 + t.rate / 100) AS total_ttc
+        FROM invoice i
+        JOIN (
+            SELECT invoice_id,
+                   SUM(quantity * unit_price) AS total_ht
+            FROM invoice_line
+            GROUP BY invoice_id
+        ) ht ON ht.invoice_id = i.id
+        JOIN tax_config t ON true
+        ORDER BY i.id
+    """;
+
+        DBConnection dbConnection = new DBConnection();
+
+        try (Connection connection = dbConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            List<InvoiceTaxSummary> result = new ArrayList<>();
+
+            while (rs.next()) {
+                InvoiceTaxSummary summary = new InvoiceTaxSummary();
+                summary.setInvoiceId(rs.getInt("invoice_id"));
+                summary.setTotalHt(rs.getDouble("total_ht"));
+                summary.setTotalTva(rs.getDouble("total_tva"));
+                summary.setTotalTtc(rs.getDouble("total_ttc"));
+                result.add(summary);
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Double computeWeightedTurnoverTtc() {
+
+        String sql = """
+        SELECT SUM(
+            CASE i.status
+                WHEN 'PAID' THEN total_ttc
+                WHEN 'CONFIRMED' THEN total_ttc * 0.5
+                ELSE 0
+            END
+        ) AS weighted_ttc
+        FROM invoice i
+        JOIN (
+            SELECT il.invoice_id,
+                   SUM(il.quantity * il.unit_price) *
+                   (1 + t.rate / 100) AS total_ttc
+            FROM invoice_line il
+            JOIN tax_config t ON true
+            GROUP BY il.invoice_id, t.rate
+        ) totals ON totals.invoice_id = i.id
+    """;
+
+        DBConnection dbConnection = new DBConnection();
+
+        try (Connection connection = dbConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            rs.next();
+            return rs.getDouble("weighted_ttc");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

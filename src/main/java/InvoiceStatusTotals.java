@@ -5,6 +5,14 @@ public class InvoiceStatusTotals {
     private Double totalConfirmed;
     private Double totalDraft;
 
+    public InvoiceStatusTotals () {}
+
+    public InvoiceStatusTotals(Double totalPaid, Double totalConfirmed, Double totalDraft) {
+        this.totalPaid = totalPaid;
+        this.totalConfirmed = totalConfirmed;
+        this.totalDraft = totalDraft;
+    }
+
     public Double getTotalPaid() {
         return totalPaid;
     }
